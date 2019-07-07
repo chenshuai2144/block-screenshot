@@ -27,7 +27,6 @@ const startServer = async path => {
   let once = false;
   return new Promise(resolve => {
     env.PAGES_PATH = `${path}/src`;
-    spinner.start(`✈ Starting development server for ${path}`);
 
     const startServer = spawn(
       /^win/.test(process.platform) ? "npm.cmd" : "npm",
@@ -41,7 +40,6 @@ const startServer = async path => {
       if (!once && data.toString().indexOf("Compiled successfully") >= 0) {
         // eslint-disable-next-line
         once = true;
-        spinner.succeed();
         return resolve(startServer);
       }
     });
@@ -72,21 +70,19 @@ const autoScroll = page =>
 const getImage = async (page, path) => {
   kill(env.PORT || 8000);
   const server = await startServer(path);
-  spinner.succeed("🏞  snapshot block image");
+
   await page.goto(`http://127.0.0.1:${env.PORT}`);
 
   await page.setViewport({
     width: 1440,
     height: 800
   });
-
   await autoScroll(page);
-
   await page.screenshot({
     path: join(path, "snapshot.png"),
     fullPage: true
   });
-  spinner.succeed();
+
   server.kill();
 };
 
@@ -111,6 +107,7 @@ const openBrowser = async () => {
  */
 const getAllFile = async cwd => {
   const files = fs.readdirSync(cwd);
+
   return files.filter(path => {
     const itemPath = join(cwd, path);
     const stat = fs.statSync(itemPath);
@@ -132,32 +129,37 @@ const getAllFile = async cwd => {
   });
 };
 
-module.exports = ({ cwd }) => {
-  getAllFile(cwd).then(async dirList => {
-    spinner.succeed("🌏  open chrome");
-    const registry = await getNpmRegistry();
-    const page = await openBrowser();
-    spinner.succeed();
+module.exports = async ({ cwd }) => {
+  spinner.start("🔍  Get all block");
+  const dirList = await getAllFile(cwd);
+  spinner.succeed();
 
-    const loopGetImage = async index => {
-      try {
-        spinner.succeed(`📦 install ${dirList[index]} dependencies`);
-        await execa("yarn", ["install", `--registry=${registry}`, "--force"], {
-          cwd: join(cwd, `./${dirList[index]}`)
-        });
-        spinner.succeed();
+  const total = dirList.length;
+  spinner.start("🌏  start puppeteer");
+  const registry = await getNpmRegistry();
+  const page = await openBrowser();
+  spinner.succeed();
 
-        await getImage(page, dirList[index]);
+  const loopGetImage = async index => {
+    try {
+      spinner.start(`📦  install ${dirList[index]} dependencies`);
+      await execa("yarn", ["install", `--registry=${registry}`, "--force"], {
+        cwd: join(cwd, `./${dirList[index]}`)
+      });
+      spinner.succeed();
 
-        if (dirList.length > index && dirList[index + 1]) {
-          return loopGetImage(index + 1);
-        }
-      } catch (error) {
-        console.log(error);
+      spinner.start(`📷  snapshot block image  (${index + 1}/${total})`);
+      await getImage(page, dirList[index]);
+      spinner.succeed();
+
+      if (dirList.length > index && dirList[index + 1]) {
+        return loopGetImage(index + 1);
       }
-      return Promise.resolve(true);
-    };
-    await loopGetImage(0);
-    browser.close();
-  });
+    } catch (error) {
+      console.log(error);
+    }
+    return Promise.resolve(true);
+  };
+  await loopGetImage(0);
+  browser.close();
 };
