@@ -1,6 +1,6 @@
 {
   "name": "block-screenshot",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "fetch all pro-blocks",
   "main": "cli.js",
   "bin": {
