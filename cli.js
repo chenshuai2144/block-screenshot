@@ -5,7 +5,7 @@ const semver = require("semver");
 const { existsSync } = require("fs");
 const { join } = require("path");
 const chalk = require("chalk");
-const run = require("./src/block-screenshot");
+const run = require("./src/screenshot");
 
 // print version and @local
 const args = yParser(process.argv.slice(2));
