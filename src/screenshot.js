@@ -82,7 +82,9 @@ const readPng = path => {
   });
 };
 
-const getImage = async (page, path, diff) => {
+const screenshot = async ({ page, path, diff, index, total }) => {
+  spinner.start(`📷  snapshot block image  (${index + 1}/${total})`);
+
   try {
     const isAvailable = await portAvailable(8000);
     if (!isAvailable) {
@@ -91,6 +93,7 @@ const getImage = async (page, path, diff) => {
   } catch (error) {
     console.log(error);
   }
+
   const server = await startServer(path);
   await page.goto(`http://127.0.0.1:${env.PORT}`);
 
@@ -101,6 +104,7 @@ const getImage = async (page, path, diff) => {
   await autoScroll(page);
   const imagePath = join(path, "snapshot.png");
   let png = null;
+  // if diff read file
   if (diff) {
     png = await readPng(imagePath);
   }
@@ -111,17 +115,18 @@ const getImage = async (page, path, diff) => {
   });
 
   if (diff) {
+    spinner.succeed();
+
     const diffPngPath = join(path, "diff.png");
-    spinner.start("diff png");
+    spinner.start(`👀  diff  ${imagePath}`);
     const isDiff = await diffPng(png, imagePath, diffPngPath);
     if (!isDiff) {
       diffFile.push(path);
     } else {
       fs.unlinkSync(diffPngPath);
     }
-    spinner.succeed();
   }
-
+  spinner.succeed();
   server.kill();
 };
 
@@ -187,9 +192,13 @@ module.exports = async ({ cwd, diff }) => {
       });
       spinner.succeed();
 
-      spinner.start(`📷  snapshot block image  (${index + 1}/${total})`);
-      await getImage(page, dirList[index], diff);
-      spinner.succeed();
+      await screenshot({
+        page,
+        path: dirList[index],
+        diff,
+        index,
+        total
+      });
 
       if (dirList.length > index && dirList[index + 1]) {
         return loopGetImage(index + 1);
