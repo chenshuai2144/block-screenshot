@@ -1,7 +1,7 @@
 {
   "name": "block-screenshot",
-  "version": "1.0.0",
-  "description": "fetch all pro-blocks",
+  "version": "1.0.1",
+  "description": "block screenshot and diff",
   "main": "cli.js",
   "bin": {
     "block-screenshot": "cli.js"
