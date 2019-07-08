@@ -2,6 +2,7 @@ const { spawn } = require("child_process");
 const puppeteer = require("puppeteer");
 const { join } = require("path");
 const fs = require("fs");
+const chalk = require("chalk");
 const getNpmRegistry = require("getnpmregistry");
 const execa = require("execa");
 const { kill } = require("cross-port-killer");
@@ -209,7 +210,8 @@ module.exports = async ({ cwd, diff }) => {
   await loopGetImage(0);
 
   if (diffFile.length > 0) {
-    console.log(`diff 结束，共有 ${diffFile.length} 未通过检查。`);
+    console.log(`End of diff, ${diffFile.length} failed.`);
+    console.log(chalk.red(diffFile.join("\n")));
   }
 
   browser.close();
