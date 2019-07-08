@@ -6,6 +6,7 @@ const getNpmRegistry = require("getnpmregistry");
 const execa = require("execa");
 const { kill } = require("cross-port-killer");
 const ora = require("ora");
+const portAvailable = require("./portAvailable");
 
 const spinner = ora();
 
@@ -68,7 +69,15 @@ const autoScroll = page =>
   );
 
 const getImage = async (page, path) => {
-  kill(env.PORT || 8000);
+  try {
+    const isAvailable = await portAvailable(8000);
+    if (!isAvailable) {
+      kill(env.PORT || 8000);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+
   const server = await startServer(path);
 
   await page.goto(`http://127.0.0.1:${env.PORT}`);
@@ -98,7 +107,6 @@ const openBrowser = async () => {
     ]
   });
   const page = await browser.newPage();
-  page.goto(`http://127.0.0.1:${env.PORT}`);
   return page;
 };
 
