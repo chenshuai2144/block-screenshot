@@ -118,7 +118,7 @@ const screenshot = async ({ page, path, diff, index, total }) => {
     spinner.succeed();
 
     const diffPngPath = join(path, "diff.png");
-    spinner.start(`👀  diff  ${imagePath}`);
+    spinner.start(`👀  diff ${imagePath}`);
     const isDiff = await diffPng(png, imagePath, diffPngPath);
     if (!isDiff) {
       diffFile.push(path);

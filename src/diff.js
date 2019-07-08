@@ -6,7 +6,7 @@ module.exports = (imageA, imageBPath, imageOutputPath) => {
       imageA, // Use file-path
       imageBPath,
       thresholdType: BlinkDiff.THRESHOLD_PERCENT,
-      threshold: 0.1, // 1% threshold
+      threshold: 0.05, // 1% threshold
       imageOutputPath,
       hideShift: true
     });
