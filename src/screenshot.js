@@ -7,7 +7,8 @@ const execa = require("execa");
 const { kill } = require("cross-port-killer");
 const ora = require("ora");
 const portAvailable = require("./portAvailable");
-
+const PNGImage = require("pngjs-image");
+const diffPng = require("./diff");
 const spinner = ora();
 
 const env = Object.create(process.env);
@@ -19,6 +20,8 @@ env.PROGRESS = "none";
 env.BLOCK_PAGES_LAYOUT = "blankLayout";
 
 let browser;
+
+let diffFile = [];
 
 /**
  * 启动区块服务
@@ -68,7 +71,18 @@ const autoScroll = page =>
       })
   );
 
-const getImage = async (page, path) => {
+const readPng = path => {
+  return new Promise((resolve, reject) => {
+    PNGImage.readImage(path, (error, image) => {
+      if (error) {
+        reject(error);
+      }
+      resolve(image);
+    });
+  });
+};
+
+const getImage = async (page, path, diff) => {
   try {
     const isAvailable = await portAvailable(8000);
     if (!isAvailable) {
@@ -77,9 +91,7 @@ const getImage = async (page, path) => {
   } catch (error) {
     console.log(error);
   }
-
   const server = await startServer(path);
-
   await page.goto(`http://127.0.0.1:${env.PORT}`);
 
   await page.setViewport({
@@ -87,10 +99,28 @@ const getImage = async (page, path) => {
     height: 800
   });
   await autoScroll(page);
+  const imagePath = join(path, "snapshot.png");
+  let png = null;
+  if (diff) {
+    png = await readPng(imagePath);
+  }
+
   await page.screenshot({
-    path: join(path, "snapshot.png"),
+    path: imagePath,
     fullPage: true
   });
+
+  if (diff) {
+    const diffPngPath = join(path, "diff.png");
+    spinner.start("diff png");
+    const isDiff = await diffPng(png, imagePath, diffPngPath);
+    if (!isDiff) {
+      diffFile.push(path);
+    } else {
+      fs.unlinkSync(diffPngPath);
+    }
+    spinner.succeed();
+  }
 
   server.kill();
 };
@@ -137,7 +167,8 @@ const getAllFile = async cwd => {
   });
 };
 
-module.exports = async ({ cwd }) => {
+module.exports = async ({ cwd, diff }) => {
+  diffFile = [];
   spinner.start("🔍  Get all block");
   const dirList = await getAllFile(cwd);
   spinner.succeed();
@@ -157,7 +188,7 @@ module.exports = async ({ cwd }) => {
       spinner.succeed();
 
       spinner.start(`📷  snapshot block image  (${index + 1}/${total})`);
-      await getImage(page, dirList[index]);
+      await getImage(page, dirList[index], diff);
       spinner.succeed();
 
       if (dirList.length > index && dirList[index + 1]) {
@@ -169,5 +200,11 @@ module.exports = async ({ cwd }) => {
     return Promise.resolve(true);
   };
   await loopGetImage(0);
+
+  if (diffFile.length > 0) {
+    console.log(`diff 结束，共有 ${diffFile.length} 未通过检查。`);
+  }
+
   browser.close();
+  return diffFile;
 };

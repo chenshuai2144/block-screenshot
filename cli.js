@@ -25,6 +25,9 @@ if (!semver.satisfies(process.version, ">= 8.0.0")) {
   process.exit(1);
 }
 const cwd = process.cwd();
+
+const { diff } = args;
 run({
-  cwd
+  cwd,
+  diff
 });
