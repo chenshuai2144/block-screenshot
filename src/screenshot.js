@@ -108,8 +108,6 @@ const readPng = path => {
 };
 
 const screenshot = async ({ page, path, diff, index, total }) => {
-  spinner.start(`📷  snapshot block image  (${index + 1}/${total})`);
-
   try {
     const isAvailable = await portAvailable(8000);
     if (!isAvailable) {
@@ -119,15 +117,22 @@ const screenshot = async ({ page, path, diff, index, total }) => {
     console.log(error);
   }
 
+  spinner.start(`🚀  start server  (${index + 1}/${total})`);
   const server = await startServer(path);
+  spinner.succeed();
+
   await page.goto(`http://127.0.0.1:${env.PORT}`);
 
   await page.setViewport({
     width: 1440,
     height: 800
   });
+
+  spinner.start(`💄  set style (${index + 1}/${total})`);
   await autoScroll(page);
   await setFontFamily(page);
+  spinner.succeed();
+
   const imagePath = join(path, "snapshot.png");
   let png = null;
   // if diff read file
@@ -135,22 +140,23 @@ const screenshot = async ({ page, path, diff, index, total }) => {
     png = await readPng(imagePath);
   }
 
+  spinner.start(`📷  snapshot block image  (${index + 1}/${total})`);
+
   await page.screenshot({
     path: imagePath,
     fullPage: true
   });
+  spinner.succeed();
 
   if (diff) {
-    spinner.succeed();
-
     const diffPngPath = join(path, "diff.png");
     spinner.start(`👀  diff ${imagePath}`);
     const isDiff = await diffPng(png, imagePath, diffPngPath);
     if (!isDiff) {
       diffFile.push(path);
     }
+    spinner.succeed();
   }
-  spinner.succeed();
   server.kill();
 };
 
