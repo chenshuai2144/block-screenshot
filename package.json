@@ -1,6 +1,6 @@
 {
   "name": "block-screenshot",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "block screenshot and diff",
   "main": "cli.js",
   "bin": {
