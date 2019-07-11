@@ -72,6 +72,30 @@ const autoScroll = page =>
       })
   );
 
+const setFontFamily = page => {
+  page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        var link = document.createElement("style");
+        link.href =
+          "https://fonts.googleapis.com/css?family=Space+Mono&display=swap";
+        link.rel = "stylesheet";
+        var style = document.createElement("style");
+        var textNode = document.createTextNode(`
+          *{
+            font-family: 'Space Mono', monospace !important; 
+          }
+        `);
+        style.appendChild(textNode);
+        link.onload = () => {
+          resolve();
+        };
+        document.head.appendChild(link);
+        document.head.appendChild(style);
+      })
+  );
+};
+
 const readPng = path => {
   return new Promise((resolve, reject) => {
     PNGImage.readImage(path, (error, image) => {
@@ -103,6 +127,7 @@ const screenshot = async ({ page, path, diff, index, total }) => {
     height: 800
   });
   await autoScroll(page);
+  await setFontFamily(page);
   const imagePath = join(path, "snapshot.png");
   let png = null;
   // if diff read file
