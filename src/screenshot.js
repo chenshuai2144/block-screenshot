@@ -178,7 +178,7 @@ const openBrowser = async () => {
 /**
  * 取得所有区块
  */
-const getAllFile = async cwd => {
+const getAllFile = async (cwd, filePath) => {
   const files = fs.readdirSync(cwd);
 
   return files.filter(path => {
@@ -189,6 +189,10 @@ const getAllFile = async cwd => {
       path.includes("_") ||
       path.includes("node_modules")
     ) {
+      return false;
+    }
+    // 支持单独的 文件夹
+    if (filePath && !filePath.includes(path)) {
       return false;
     }
     if (stat.isDirectory()) {
@@ -202,10 +206,10 @@ const getAllFile = async cwd => {
   });
 };
 
-module.exports = async ({ cwd, diff }) => {
+module.exports = async ({ cwd, diff, path }) => {
   diffFile = [];
   spinner.start("🔍  Get all block");
-  const dirList = await getAllFile(cwd);
+  const dirList = await getAllFile(cwd, path);
   spinner.succeed();
 
   const total = dirList.length;
